@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Q·26 Studio · Conectando con Google</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(1200px 600px at 20% 10%,#12324a 0,#070b14 60%);color:#e8eefb;font:16px/1.55 system-ui,Segoe UI,Roboto,sans-serif;padding:16px}
+.c{max-width:480px;width:100%;background:rgba(14,22,36,.92);border:1px solid #233651;border-radius:20px;padding:28px;box-shadow:0 30px 80px rgba(0,0,0,.55);text-align:center}
+.lg{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#14b8a6,#6366f1);font-weight:800;font-size:20px;margin-bottom:10px}
+h1{font-size:21px;margin:6px 0}p{color:#a9b6d3;font-size:14px}.code{font:700 13px ui-monospace,Consolas,monospace;word-break:break-all;background:#0a111d;border:1px dashed #3b5378;border-radius:12px;padding:12px;margin:12px 0;user-select:all;text-align:left;max-height:120px;overflow:auto}
+button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;font-size:15px;cursor:pointer;width:100%;background:linear-gradient(90deg,#14b8a6,#6366f1);color:#fff}.ok{color:#5eead4}.bad{color:#ff8f8f}</style></head>
+<body><div class="c"><div class="lg">Q</div><h1 id="t">Conectando con Google…</h1><p id="p"></p><div id="x"></div></div>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search), code=q.get('code'), state=q.get('state')||'', err=q.get('error');
+  history.replaceState(null,'',location.pathname);
+  var t=document.getElementById('t'), p=document.getElementById('p'), x=document.getElementById('x');
+  if(err||!code){ t.textContent='No se completó la autorización'; t.className='bad'; p.textContent=err==='access_denied'?'Se canceló el permiso en Google. Vuelva a Q·26 e inténtelo de nuevo.':'Vuelva a Q·26 e inténtelo de nuevo.'; return; }
+  var payload='Q26G:'+state+':'+code, sent=false;
+  try{ if(window.opener){ window.opener.postMessage({type:'q26g-oauth',state:state,code:code},'*'); sent=true; } }catch(e){}
+  if(sent){ t.textContent='✓ Cuenta conectada'; t.className='ok'; p.textContent='Ya puede cerrar esta pestaña y volver a Q·26 Studio.'; setTimeout(function(){ try{ window.close(); }catch(e){} },1500); }
+  else { t.textContent='Último paso'; p.innerHTML='Copie este código y péguelo en Q·26 Studio, en el recuadro <b>«Pegue aquí el código»</b>.'; }
+  x.innerHTML='<div class="code" id="c"></div><button id="b">Copiar código</button>';
+  document.getElementById('c').textContent=payload;
+  document.getElementById('b').onclick=function(){ try{ navigator.clipboard.writeText(payload); this.textContent='✓ Copiado. Vuelva a Q·26 y péguelo'; }catch(e){ this.textContent='Seleccione el texto y cópielo'; } };
+  if(sent){ x.firstChild.style.display='none'; document.getElementById('b').textContent='¿No se conectó? Copiar código'; }
+})();
+</script></body></html>
