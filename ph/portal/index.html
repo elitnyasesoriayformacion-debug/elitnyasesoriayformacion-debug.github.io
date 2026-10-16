@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Portal de propietarios · Gestión Integral PH</title>
+<style>
+:root{--azul:#071f50;--azul2:#15479d;--nar:#ff6a00;--nar2:#ff8a00;--tinta:#0b1733;--gris:#64748b;--linea:#dce5f2;--bg:#edf2f8;--ok:#16a34a;--bad:#dc2626;--warn:#d97706}
+*{box-sizing:border-box}html,body{margin:0}body{font:15px/1.45 "Segoe UI",Roboto,system-ui,sans-serif;background:var(--bg);color:var(--tinta)}
+button,input,select,textarea{font:inherit}a{color:var(--azul2)}
+.top{background:linear-gradient(120deg,var(--azul),var(--azul2));color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+.top .k{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--nar),#ff3b6b);display:grid;place-items:center;font-weight:900}
+.top .t{flex:1;min-width:0}.top .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.top .t span{font-size:12px;opacity:.8}
+.top button{background:rgba(255,255,255,.15);color:#fff;border:0;border-radius:9px;padding:7px 11px;cursor:pointer}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:16px;margin:0 0 14px;box-shadow:0 6px 18px rgba(7,31,80,.06)}
+h1{font-size:22px;margin:4px 0 8px;color:var(--azul)}h2{font-size:17px;margin:0 0 10px;color:var(--azul)}
+.muted{color:var(--gris);font-size:13px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--nar),var(--nar2));color:#fff;text-decoration:none}
+.btn.sec{background:#eef3fb;color:var(--azul)}.btn.pay{background:linear-gradient(90deg,#16a34a,#0d9488)}.btn.full{width:100%}
+.btn:disabled{opacity:.6;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+label{display:block;font-size:12.5px;font-weight:700;color:var(--azul);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.03em}
+input,select,textarea{width:100%;border:1.5px solid #cbd5e1;border-radius:11px;padding:11px 12px;background:#fff}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--nar)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;border:1px solid var(--linea);background:#fff;color:var(--azul);border-radius:999px;padding:8px 13px;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+.box{border-radius:12px;padding:11px 13px;margin:8px 0;font-weight:600}.box.ok{background:#dcfce7;color:#166534}.box.bad{background:#fee2e2;color:#991b1b}.box.warn{background:#fef3c7;color:#92400e}.box.info{background:#eff6ff;color:#1e3a8a}
+.unit{border:1px solid var(--linea);border-radius:14px;padding:13px;margin:10px 0}
+.unit .s{font-size:26px;font-weight:800;color:var(--azul)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid #eef2f7;vertical-align:top}th{color:var(--gris);font-weight:600;font-size:12px}
+td.n{text-align:right;white-space:nowrap}.tw{overflow-x:auto}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700}.pill.ok{background:#dcfce7;color:#166534}.pill.warn{background:#fef3c7;color:#92400e}.pill.bad{background:#fee2e2;color:#991b1b}
+.item{border-top:1px solid #eef2f7;padding:10px 0}.item:first-child{border-top:0}
+.login{min-height:100vh;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 30% 15%,#15479d,#071f50 60%,#020817)}
+.login .card{width:min(420px,100%);text-align:center;padding:26px 22px}
+.login input{font-size:22px;text-align:center;letter-spacing:.06em}
+.err{color:var(--bad);font-weight:600;min-height:20px;margin:10px 0;font-size:14px}
+.foot{text-align:center;color:var(--gris);font-size:12px;padding:10px 0 24px}
+#doc{display:none}
+@media print{body{background:#fff}body>*:not(#doc){display:none!important}#doc{display:block!important;color:#111;font:11pt Arial,sans-serif;padding:0 8px}#doc h1{text-align:center;color:#1e3a8a;font-size:15pt}#doc table{font-size:10pt}#doc th,#doc td{border:1px solid #999}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="doc"></div>
+<script>
+(function(){
+"use strict";
+var SB="https://kdklenfuqafnmdrmpvuo.supabase.co", KEY="sb_publishable_6PO6U3rXvK7q-JUP6dUBCg_gnMcyLyq";
+var CODE=(new URLSearchParams(location.search).get("c")||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+var app=document.getElementById("app"), D=null, CED="", TAB="inicio";
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function cop(v){return "$ "+Math.round(Number(v)||0).toLocaleString("es-CO");}
+function fch(d){if(!d)return "";var a=String(d).slice(0,10).split("-");return a.length===3?a[2]+"/"+a[1]+"/"+a[0]:String(d);}
+function hoy(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function api(route,body){
+  return fetch(SB+"/rest/v1/rpc/krea_api",{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY,Authorization:"Bearer "+KEY},
+    body:JSON.stringify({p_app:"php",p_token:"",p_route:route,p_method:"POST",p_query:{},p_body:body,p_ua:""})})
+  .then(function(r){return r.json().catch(function(){return null;}).then(function(j){ if(!r.ok) throw new Error((j&&j.message)||"No hay conexión con el servidor."); if(j&&j.error) throw new Error(j.error); return j;});},
+        function(){throw new Error("No hay conexión a internet.");});
+}
+var LINK_CODE=CODE;
+function ss(k,v){ try{ if(v===undefined) return sessionStorage.getItem(k); if(v===null) sessionStorage.removeItem(k); else sessionStorage.setItem(k,v); }catch(e){ return null; } }
+function entrar(code,c,b,err){
+  api("login",{code:code,ced:c}).then(function(j){
+    if(j&&j.elegir){ if(b){b.disabled=false;b.textContent="Ingresar";}
+      document.getElementById("pick").innerHTML='<p class="muted" style="margin:12px 0 6px">Su cédula está registrada en varios conjuntos. Elija uno:</p>'+j.elegir.map(function(x){return '<button class="btn sec full" style="margin:4px 0" data-code="'+esc(x.code)+'">🏢 '+esc(x.nombre)+'</button>';}).join("");
+      Array.prototype.forEach.call(document.querySelectorAll("[data-code]"),function(x){x.onclick=function(){entrar(x.getAttribute("data-code"),c,null,err);};});
+      return; }
+    CED=c; D=j; CODE=j.code||code; ss("php-s",CODE+":"+c); TAB="inicio"; render();
+  },function(e){ if(b){b.disabled=false;b.textContent="Ingresar";} err.textContent=e.message; var i=document.getElementById("ced"); if(i) i.select(); });
+}
+function login(msg){
+  D=null; CED=""; CODE=LINK_CODE; ss("php-s",null);
+  document.title="Portal de propietarios";
+  app.innerHTML='<div class="login"><div class="card"><div style="font-size:44px">🏠</div><div style="color:var(--nar);font-weight:800;letter-spacing:.08em;font-size:12px;text-transform:uppercase">Portal de propietarios</div>'+
+    '<h1>Bienvenido(a)</h1><p class="muted">Ingrese con su <b>número de cédula</b>, el registrado por la administración de su conjunto.</p><input id="ced" inputmode="numeric" autocomplete="off" placeholder="Número de cédula"><div class="err" id="err">'+esc(msg||"")+'</div><button class="btn full" id="go">Ingresar</button><div id="pick"></div>'+
+    '<p class="muted" style="margin-top:16px;font-size:11.5px">Gestión Integral PH · Academia KREA · <a href="https://elitnyasesoriayformacion-debug.github.io/politica-de-privacidad/" target="_blank" rel="noopener">Política de privacidad</a></p></div></div>';
+  var inp=document.getElementById("ced"), b=document.getElementById("go"), err=document.getElementById("err");
+  var go=function(){ var c=inp.value.replace(/\D/g,""); if(c.length<4){err.textContent="Escriba su número de cédula completo.";inp.focus();return;}
+    b.disabled=true; b.textContent="Verificando…"; err.textContent=""; document.getElementById("pick").innerHTML="";
+    entrar(CODE,c,b,err);
+  };
+  b.onclick=go; inp.onkeydown=function(e){if(e.key==="Enter")go();}; setTimeout(function(){inp.focus();},60);
+}
+function payLink(u,valor){var p=D.comun.pago||{};if(!/^https:\/\//i.test(p.url||""))return "";return p.url.replace(/\{valor\}/gi,String(Math.round(Math.max(0,valor||0)))).replace(/\{unidad\}/gi,encodeURIComponent(u.label)).replace(/\{cedula\}/gi,CED);}
+function printDoc(title,html){var c=D.comun.config||{};document.getElementById("doc").innerHTML='<h1>'+esc(c.nombre)+'</h1><p style="text-align:center">'+esc([c.nit&&("NIT "+c.nit),c.direccion,c.ciudad].filter(Boolean).join(" · "))+'</p><h1 style="font-size:13pt">'+esc(title)+'</h1><p style="text-align:center;font-size:9pt">Información con corte al '+fch(D.comun.corte)+' · Portal de propietarios</p><hr>'+html;setTimeout(function(){window.print();},50);}
+function firma(){var c=D.comun.config||{};return '<br><br><p>_____________________________<br><b>'+esc(c.administrador||"Administrador(a)")+'</b><br>Administrador(a) y Representante Legal'+(c.ccAdministrador?"<br>C.C. "+esc(c.ccAdministrador):"")+'</p>';}
+function movsTable(u){return '<table><tr><th>Fecha</th><th>Concepto</th><th class="n">Cargo</th><th class="n">Abono</th><th class="n">Saldo</th></tr>'+(u.movs.length?u.movs.map(function(m){return '<tr><td>'+fch(m.f)+'</td><td>'+esc(m.c)+(m.rc?" ("+esc(m.rc)+")":"")+'</td><td class="n">'+(m.cargo?cop(m.cargo):"")+'</td><td class="n">'+(m.abono?cop(m.abono):"")+'</td><td class="n">'+cop(m.saldo)+'</td></tr>';}).join(""):'<tr><td colspan="5">Sin movimientos registrados.</td></tr>')+'</table>';}
+function send(tipo,data,btn,ok){
+  if(btn){btn.disabled=true;btn._t=btn.textContent;btn.textContent="Enviando…";}
+  return api("enviar",{code:CODE,ced:CED,tipo:tipo,data:data}).then(function(){ if(btn){btn.disabled=false;btn.textContent=btn._t;} alert(ok||"✓ Enviado a la administración."); },
+    function(e){ if(btn){btn.disabled=false;btn.textContent=btn._t;} alert("No se pudo enviar: "+e.message); });
+}
+function render(){
+  var P=D.prop, C=D.comun, cfg=C.config||{};
+  document.title=(cfg.nombre||"Portal")+" · Portal de propietarios";
+  var tabs=[["inicio","Inicio"],["cuenta","Estado de cuenta"],["pqrs","PQRS"],["reservas","Reservas"],["anuncios","Anuncios"],["datos","Mis datos"]];
+  app.innerHTML='<div class="top"><div class="k">K</div><div class="t"><b>'+esc(cfg.nombre||"Copropiedad")+'</b><span>'+esc(P.nombre)+' · C.C. '+esc(CED)+'</span></div><button id="out">Salir</button></div>'+
+    '<div class="wrap"><div class="tabs">'+tabs.map(function(t){return '<button data-t="'+t[0]+'" class="'+(t[0]===TAB?"on":"")+'">'+t[1]+'</button>';}).join("")+'</div><div id="v"></div>'+
+    '<div class="foot">Información actualizada por la administración el '+fch(C.corte)+'.<br>Gestión Integral PH · Academia KREA</div></div>';
+  document.getElementById("out").onclick=function(){login();};
+  Array.prototype.forEach.call(app.querySelectorAll(".tabs button"),function(b){b.onclick=function(){TAB=b.getAttribute("data-t");render();window.scrollTo(0,0);};});
+  var v=document.getElementById("v"); ({inicio:vInicio,cuenta:vCuenta,pqrs:vPqrs,reservas:vReservas,anuncios:vAnuncios,datos:vDatos}[TAB]||vInicio)(v,P,C);
+}
+function vInicio(v,P,C){
+  var h='<div class="card"><h1>Hola, '+esc((P.nombre||"").split(" ")[0]||"propietario(a)")+'</h1><p class="muted">Este es el resumen de sus unidades en '+esc(C.config.nombre)+'.</p>';
+  P.unidades.forEach(function(u,i){
+    var link=payLink(u,u.saldo);
+    h+='<div class="unit"><div class="muted">'+esc(u.label)+(u.coef?" · coeficiente "+esc(u.coef)+"%":"")+'</div><div class="s">'+cop(u.saldo)+'</div>'+
+      (u.saldo>0?(u.vencido>0?'<div class="box bad">En mora: '+cop(u.vencido)+' vencido ('+u.diasMora+' días)</div>':'<div class="box warn">Saldo pendiente, aún no vencido</div>'):'<div class="box ok">✓ Está al día</div>')+
+      '<div class="row">'+(link&&u.saldo>0?'<button class="btn pay" data-pay="'+i+'">💳 '+esc(C.pago.texto||"Pagar en línea")+'</button>':"")+
+      '<button class="btn sec" data-ec="'+i+'">Estado de cuenta</button>'+(u.saldo<=0?'<button class="btn sec" data-pz="'+i+'">✅ Paz y salvo</button>':"")+'</div></div>';
+  });
+  if(!(C.pago&&C.pago.url)&&(C.pago.banco||C.pago.cuenta)) h+='<p class="muted">Pagos: '+esc([C.pago.banco,C.pago.cuenta&&("cuenta "+C.pago.cuenta),C.pago.convenio&&("convenio "+C.pago.convenio)].filter(Boolean).join(" · "))+'. Indique su unidad como referencia.</p>';
+  h+='</div>';
+  if(C.anuncios.length){ var a=C.anuncios[0]; h+='<div class="card"><h2>📢 Último anuncio</h2><b>'+esc(a.titulo)+'</b> <span class="muted">· '+fch(a.fecha)+'</span><p style="white-space:pre-wrap;margin:6px 0 0">'+esc(a.texto)+'</p></div>'; }
+  v.innerHTML=h;
+  Array.prototype.forEach.call(v.querySelectorAll("[data-pay]"),function(b){b.onclick=function(){var u=P.unidades[+b.getAttribute("data-pay")];var l=payLink(u,u.saldo);if(confirm("Se abrirá la pasarela de pago.\n\nValor: "+cop(u.saldo)+"\nReferencia: "+u.label+(C.pago.nota?"\n\n"+C.pago.nota:"")+"\n\nGuarde el comprobante; la administración aplicará el pago a su estado de cuenta."))window.open(l,"_blank","noopener");};});
+  Array.prototype.forEach.call(v.querySelectorAll("[data-ec]"),function(b){b.onclick=function(){TAB="cuenta";render();};});
+  Array.prototype.forEach.call(v.querySelectorAll("[data-pz]"),function(b){b.onclick=function(){paz(P.unidades[+b.getAttribute("data-pz")]);};});
+}
+function paz(u){
+  if(u.saldo>0){alert("No es posible generar el paz y salvo: la unidad tiene un saldo de "+cop(u.saldo)+".");return;}
+  var c=D.comun.config||{};
+  printDoc("Paz y salvo",'<p style="font-size:12pt;line-height:1.8;text-align:justify">La Administración de <b>'+esc(c.nombre)+'</b>'+(c.nit?", identificada con NIT "+esc(c.nit):"")+', <b>CERTIFICA</b> que la unidad privada <b>'+esc(u.label)+'</b>, de propiedad de <b>'+esc(D.prop.nombre)+'</b>, identificado(a) con documento '+esc(CED)+', se encuentra a <b>PAZ Y SALVO</b> por concepto de cuotas de administración, intereses y demás expensas comunes causadas hasta el '+fch(D.comun.corte)+', según la información registrada por la administración.</p><p>Generado desde el portal de propietarios el '+new Date().toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"})+'.</p>'+firma());
+}
+function vCuenta(v,P){
+  var h="";
+  P.unidades.forEach(function(u,i){
+    var rc=u.movs.filter(function(m){return m.abono>0;}).slice(-12).reverse();
+    h+='<div class="card"><h2>'+esc(u.label)+' · saldo '+cop(u.saldo)+'</h2><div class="tw">'+movsTable(u)+'</div><div class="row"><button class="btn sec" data-pr="'+i+'">🖨 Imprimir / PDF</button>'+(u.saldo<=0?'<button class="btn sec" data-pz="'+i+'">✅ Paz y salvo</button>':"")+'</div>'+
+      (rc.length?'<h2 style="margin-top:14px">Recibos de caja</h2>'+rc.map(function(m,k){return '<div class="item">'+esc(m.rc||"Pago")+' · '+fch(m.f)+' · <b>'+cop(m.abono)+'</b> <button class="btn sec" style="padding:5px 10px;font-size:13px" data-rc="'+i+':'+k+'">Ver recibo</button></div>';}).join(""):"")+'</div>';
+  });
+  v.innerHTML=h;
+  Array.prototype.forEach.call(v.querySelectorAll("[data-pr]"),function(b){b.onclick=function(){var u=P.unidades[+b.getAttribute("data-pr")];printDoc("Estado de cuenta",'<p><b>Unidad:</b> '+esc(u.label)+' · <b>Propietario:</b> '+esc(P.nombre)+' · C.C. '+esc(CED)+'</p>'+movsTable(u)+'<h2>Saldo: '+cop(u.saldo)+'</h2>');};});
+  Array.prototype.forEach.call(v.querySelectorAll("[data-pz]"),function(b){b.onclick=function(){paz(P.unidades[+b.getAttribute("data-pz")]);};});
+  Array.prototype.forEach.call(v.querySelectorAll("[data-rc]"),function(b){b.onclick=function(){var a=b.getAttribute("data-rc").split(":"),u=P.unidades[+a[0]],m=u.movs.filter(function(x){return x.abono>0;}).slice(-12).reverse()[+a[1]];
+    printDoc("Recibo de caja "+(m.rc||""),'<table><tr><th>Fecha</th><td>'+fch(m.f)+'</td><th>Valor</th><td><b>'+cop(m.abono)+'</b></td></tr><tr><th>Recibimos de</th><td>'+esc(P.nombre)+'</td><th>Unidad</th><td>'+esc(u.label)+'</td></tr><tr><th>Concepto</th><td colspan="3">Abono a cuotas de administración y demás expensas comunes</td></tr><tr><th>Medio</th><td>'+esc(m.medio)+'</td><th>Referencia</th><td>'+esc(m.ref)+'</td></tr><tr><th>Saldo después del pago</th><td colspan="3">'+cop(m.saldo)+'</td></tr></table>'+firma());};});
+}
+function vPqrs(v,P,C){
+  var tipos=C.tipos||["Petición","Queja","Reclamo","Sugerencia","Felicitación","Convivencia","Garantía / posventa"];
+  var h='<div class="card"><h2>Radicar una PQRS</h2><label>Tipo</label><select id="pt">'+tipos.map(function(t){return "<option>"+esc(t)+"</option>";}).join("")+'</select>'+
+    '<label>Unidad</label><select id="pu">'+P.unidades.map(function(u){return "<option>"+esc(u.label)+"</option>";}).join("")+'</select>'+
+    '<label>Asunto</label><input id="pa" maxlength="200"><label>Descripción</label><textarea id="pd" rows="4" maxlength="3000"></textarea><div class="row"><button class="btn full" id="ps">Enviar a la administración</button></div></div>';
+  h+='<div class="card"><h2>Mis PQRS</h2>'+(P.pqrs.length?P.pqrs.map(function(p,i){var c=p.estado==="Cerrado"?"ok":(p.fechaLimite&&p.fechaLimite<hoy()?"bad":"warn");
+      return '<div class="item"><b>'+esc(p.radicado)+'</b> · '+esc(p.tipo)+' <span class="pill '+c+'">'+esc(p.estado)+'</span><div>'+esc(p.asunto)+'</div><div class="muted">Radicada '+fch(p.fecha)+(p.estado!=="Cerrado"?" · respuesta a más tardar "+fch(p.fechaLimite):"")+'</div>'+
+        (p.respuesta?'<div class="box info" style="font-weight:500;white-space:pre-wrap"><b>Respuesta:</b> '+esc(p.respuesta)+'</div>':"")+
+        (p.estado==="Cerrado"&&!p.satisfaccion?'<div class="row"><select data-sq="'+i+'" style="width:auto"><option value="">¿Qué tan satisfecho(a) quedó?</option><option value="100">Muy satisfecho(a)</option><option value="75">Satisfecho(a)</option><option value="50">Regular</option><option value="25">Insatisfecho(a)</option><option value="0">Muy insatisfecho(a)</option></select></div>':"")+'</div>';}).join("")
+    :'<p class="muted">No tiene PQRS radicadas. Las que envíe aparecerán aquí cuando la administración actualice el portal.</p>')+'</div>';
+  v.innerHTML=h;
+  document.getElementById("ps").onclick=function(){var a=document.getElementById("pa").value.trim(),d=document.getElementById("pd").value.trim();if(!a||!d){alert("Escriba el asunto y la descripción.");return;}
+    send("pqrs",{tipo:document.getElementById("pt").value,unidad:document.getElementById("pu").value,asunto:a,descripcion:d,contacto:(P.datos&&(P.datos.celular||P.datos.correo))||""},this,"✓ Su PQRS fue enviada. La administración la radicará y le dará respuesta.").then(function(){document.getElementById("pa").value="";document.getElementById("pd").value="";});};
+  Array.prototype.forEach.call(v.querySelectorAll("[data-sq]"),function(s){s.onchange=function(){if(s.value==="")return;var p=P.pqrs[+s.getAttribute("data-sq")];send("calificacion",{radicado:p.radicado,satisfaccion:+s.value},null,"✓ Gracias por calificar la atención.");p.satisfaccion=s.value;s.disabled=true;};});
+}
+function vReservas(v,P,C){
+  var z=C.zonas||[];
+  var h='<div class="card"><h2>Solicitar una zona común</h2>'+(z.length?'<label>Zona</label><select id="rz">'+z.map(function(x){return '<option value="'+esc(x.zona)+'">'+esc(x.zona)+(x.precio?" · "+cop(x.precio):"")+'</option>';}).join("")+'</select><div class="muted" id="rr"></div>':'<label>Zona</label><input id="rz" placeholder="Ej.: Salón social">')+
+    '<label>Fecha</label><input id="rf" type="date" min="'+hoy()+'" value="'+hoy()+'"><div class="row" style="margin:0"><div style="flex:1"><label>Desde</label><input id="ri" type="time" value="10:00"></div><div style="flex:1"><label>Hasta</label><input id="rh" type="time" value="14:00"></div></div>'+
+    '<label>Unidad</label><select id="ru">'+P.unidades.map(function(u){return "<option>"+esc(u.label)+"</option>";}).join("")+'</select><label>Celular de contacto</label><input id="rc" inputmode="tel" value="'+esc((P.datos&&P.datos.celular)||"")+'"><label>Motivo / observaciones</label><textarea id="ro" rows="2" maxlength="500"></textarea>'+
+    '<div class="row"><button class="btn full" id="rs">Enviar solicitud</button></div><p class="muted">La administración revisa la disponibilidad y le confirma la reserva.</p></div>';
+  h+='<div class="card"><h2>Mis solicitudes</h2>'+(P.reservas.length?P.reservas.slice().reverse().map(function(r){var c=r.estado==="Confirmada"?"ok":(r.estado==="Rechazada"?"bad":"warn");return '<div class="item"><b>'+esc(r.zona)+'</b> · '+fch(r.fecha)+' '+esc(r.horaInicio)+'–'+esc(r.horaFin)+' <span class="pill '+c+'">'+esc(r.estado)+'</span>'+(r.precio?'<div class="muted">Valor: '+cop(r.precio)+'</div>':"")+'</div>';}).join(""):'<p class="muted">Aún no tiene solicitudes.</p>')+'</div>';
+  v.innerHTML=h;
+  var rz=document.getElementById("rz"),rr=document.getElementById("rr");
+  var reglas=function(){if(!rr)return;var x=z.filter(function(q){return q.zona===rz.value;})[0];rr.textContent=x&&x.reglas?"Condiciones: "+x.reglas:"";};reglas();if(rz.tagName==="SELECT")rz.onchange=reglas;
+  document.getElementById("rs").onclick=function(){var zona=rz.value.trim(),f=document.getElementById("rf").value,i=document.getElementById("ri").value,e=document.getElementById("rh").value;
+    if(!zona||!f){alert("Elija la zona y la fecha.");return;} if(f<hoy()){alert("La fecha ya pasó.");return;} if(e<=i){alert("La hora final debe ser mayor que la inicial.");return;}
+    send("reserva",{zona:zona,fecha:f,horaInicio:i,horaFin:e,unidad:document.getElementById("ru").value,celular:document.getElementById("rc").value.trim(),observaciones:document.getElementById("ro").value.trim()},this,"✓ Solicitud enviada. La administración le confirmará la reserva.");};
+}
+function vAnuncios(v,P,C){
+  var h='<div class="card"><h2>📢 Anuncios de la administración</h2>'+(C.anuncios.length?C.anuncios.map(function(a){return '<div class="item"><span class="pill warn">'+esc(a.tipo||"Comunicado")+'</span> <b>'+esc(a.titulo)+'</b><div class="muted">'+fch(a.fecha)+'</div><p style="white-space:pre-wrap;margin:6px 0 0">'+esc(a.texto)+'</p></div>';}).join(""):'<p class="muted">No hay anuncios publicados.</p>')+'</div>';
+  if(C.clasificados.length) h+='<div class="card"><h2>Clasificados del conjunto</h2>'+C.clasificados.map(function(x){var cel=String(x.celular||"").replace(/\D/g,"");return '<div class="item"><span class="pill ok">'+esc(x.categoria)+'</span> '+esc(x.descripcion)+'<div class="muted">'+esc(x.contacto)+(cel?' · <a href="https://wa.me/'+(cel.length===10?"57"+cel:cel)+'" target="_blank" rel="noopener">'+esc(x.celular)+'</a>':"")+'</div></div>';}).join("")+'</div>';
+  v.innerHTML=h;
+}
+function vDatos(v,P,C){
+  var d=P.datos||{}, hb=P.habeas;
+  var h='<div class="card"><h2>Mis datos de contacto</h2><p class="muted">Manténgalos al día para recibir cuentas de cobro, convocatorias y avisos de portería.</p><label>Celular</label><input id="dc" inputmode="tel" value="'+esc(d.celular)+'"><label>Correo electrónico</label><input id="dm" type="email" value="'+esc(d.correo)+'">'+
+    '<label>Ocupación de la unidad</label><select id="do">'+["Habita Propietario","Arrendado","Desocupado"].map(function(o){return "<option"+(o===d.ocupacion?" selected":"")+">"+o+"</option>";}).join("")+'</select><div class="row"><button class="btn full" id="ds">Enviar actualización</button></div></div>';
+  h+='<div class="card"><h2>Mis unidades</h2><div class="tw"><table><tr><th>Unidad</th><th>Coef.</th><th>Ocupación</th><th>Parqueadero</th><th>Depósito</th></tr>'+P.unidades.map(function(u){return '<tr><td>'+esc(u.label)+'</td><td>'+esc(u.coef)+'</td><td>'+esc(u.ocupacion)+'</td><td>'+esc(u.parqueadero)+'</td><td>'+esc(u.deposito)+'</td></tr>';}).join("")+'</table></div></div>';
+  h+='<div class="card"><h2>Autorización de tratamiento de datos (Habeas Data)</h2>'+(C.habeas&&C.habeas.texto?'<div style="font-size:13px;white-space:pre-wrap;max-height:200px;overflow:auto;border:1px solid var(--linea);border-radius:10px;padding:10px;background:#f8fafc">'+esc(C.habeas.texto)+'</div>':"")+
+    (hb&&hb.estado==="ACEPTADA"?'<div class="box ok">✓ Autorización aceptada el '+fch(hb.fecha)+'.</div><button class="btn sec" id="hr">Revocar mi autorización</button>':'<label style="text-transform:none;font-weight:500;display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="hc" style="width:auto;margin-top:3px"> He leído y autorizo el tratamiento de mis datos personales en los términos anteriores.</label><button class="btn" id="ha">Aceptar autorización</button>')+'</div>';
+  v.innerHTML=h;
+  document.getElementById("ds").onclick=function(){var m=document.getElementById("dm").value.trim();if(m&&!/^\S+@\S+\.\S+$/.test(m)){alert("Revise el correo electrónico.");return;}
+    send("datos",{celular:document.getElementById("dc").value.trim(),correo:m,ocupacion:document.getElementById("do").value},this,"✓ Actualización enviada a la administración.");};
+  var ha=document.getElementById("ha"); if(ha) ha.onclick=function(){if(!document.getElementById("hc").checked){alert("Marque la casilla para autorizar.");return;} send("habeas",{estado:"ACEPTADA",version:C.habeas&&C.habeas.version},this,"✓ Autorización enviada.").then(function(){P.habeas={estado:"ACEPTADA",fecha:hoy()};render();});};
+  var hr=document.getElementById("hr"); if(hr) hr.onclick=function(){if(!confirm("¿Revocar su autorización de tratamiento de datos?"))return; send("habeas",{estado:"REVOCADA"},this,"Revocación enviada a la administración.").then(function(){P.habeas={estado:"REVOCADA",fecha:hoy()};render();});};
+}
+var saved=String(ss("php-s")||"").split(":");
+if(saved.length===2&&saved[1]&&(!LINK_CODE||LINK_CODE===saved[0])){ app.innerHTML='<div class="login"><div class="card"><p>Cargando…</p></div></div>'; api("login",{code:saved[0],ced:saved[1]}).then(function(j){CED=saved[1];D=j;CODE=j.code||saved[0];render();},function(e){login(e.message);}); }
+else login();
+})();
+</script>
+</body>
+</html>
