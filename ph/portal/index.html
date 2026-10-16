@@ -88,6 +88,23 @@ function login(msg){
   b.onclick=go; inp.onkeydown=function(e){if(e.key==="Enter")go();}; setTimeout(function(){inp.focus();},60);
 }
 function payLink(u,valor){var p=D.comun.pago||{};if(!/^https:\/\//i.test(p.url||""))return "";return p.url.replace(/\{valor\}/gi,String(Math.round(Math.max(0,valor||0)))).replace(/\{unidad\}/gi,encodeURIComponent(u.label)).replace(/\{cedula\}/gi,CED);}
+function payBtn(i,u){return '<button class="btn pay" data-pay="'+i+'">💳 '+esc((D.comun.pago&&D.comun.pago.texto)||"Pagar en línea")+(u.saldo>0?" · "+cop(u.saldo):"")+'</button>';}
+function pagar(u){
+  var p=D.comun.pago||{}, valor=u.saldo>0?u.saldo:0;
+  if(!/^https:\/\//i.test(p.url||"")){
+    var datos=[p.banco,p.cuenta&&("cuenta "+p.cuenta),p.convenio&&("convenio/referencia "+p.convenio)].filter(Boolean).join(" · ");
+    alert("El pago en línea aún no está habilitado por la administración de "+String((D.comun.config&&D.comun.config.nombre)||"su conjunto").replace(/\.+$/,"")+"."+(datos?"\n\nPuede pagar por consignación o transferencia: "+datos+".\nIndique como referencia su unidad: "+u.label+".":"\n\nComuníquese con la administración para conocer los medios de pago."));
+    return;
+  }
+  if(valor<=0){
+    var v=prompt("Su unidad "+u.label+" está al día.\n\n¿Cuánto desea abonar por anticipado? (solo números)","");
+    if(v===null) return; valor=Number(String(v).replace(/[^\d]/g,""))||0;
+    if(valor<=0){ alert("Escriba un valor válido."); return; }
+  }
+  var l=payLink(u,valor);
+  if(confirm("Se abrirá la pasarela de pago.\n\nValor: "+cop(valor)+"\nReferencia: "+u.label+(p.nota?"\n\n"+p.nota:"")+"\n\nGuarde el comprobante; la administración aplicará el pago a su estado de cuenta.")) window.open(l,"_blank","noopener");
+}
+function bindPay(v,P){Array.prototype.forEach.call(v.querySelectorAll("[data-pay]"),function(b){b.onclick=function(){pagar(P.unidades[+b.getAttribute("data-pay")]);};});}
 function printDoc(title,html){var c=D.comun.config||{};document.getElementById("doc").innerHTML='<h1>'+esc(c.nombre)+'</h1><p style="text-align:center">'+esc([c.nit&&("NIT "+c.nit),c.direccion,c.ciudad].filter(Boolean).join(" · "))+'</p><h1 style="font-size:13pt">'+esc(title)+'</h1><p style="text-align:center;font-size:9pt">Información con corte al '+fch(D.comun.corte)+' · Portal de propietarios</p><hr>'+html;setTimeout(function(){window.print();},50);}
 function firma(){var c=D.comun.config||{};return '<br><br><p>_____________________________<br><b>'+esc(c.administrador||"Administrador(a)")+'</b><br>Administrador(a) y Representante Legal'+(c.ccAdministrador?"<br>C.C. "+esc(c.ccAdministrador):"")+'</p>';}
 function movsTable(u){return '<table><tr><th>Fecha</th><th>Concepto</th><th class="n">Cargo</th><th class="n">Abono</th><th class="n">Saldo</th></tr>'+(u.movs.length?u.movs.map(function(m){return '<tr><td>'+fch(m.f)+'</td><td>'+esc(m.c)+(m.rc?" ("+esc(m.rc)+")":"")+'</td><td class="n">'+(m.cargo?cop(m.cargo):"")+'</td><td class="n">'+(m.abono?cop(m.abono):"")+'</td><td class="n">'+cop(m.saldo)+'</td></tr>';}).join(""):'<tr><td colspan="5">Sin movimientos registrados.</td></tr>')+'</table>';}
@@ -108,19 +125,18 @@ function render(){
   var v=document.getElementById("v"); ({inicio:vInicio,cuenta:vCuenta,pqrs:vPqrs,reservas:vReservas,anuncios:vAnuncios,datos:vDatos}[TAB]||vInicio)(v,P,C);
 }
 function vInicio(v,P,C){
-  var h='<div class="card"><h1>Hola, '+esc((P.nombre||"").split(" ")[0]||"propietario(a)")+'</h1><p class="muted">Este es el resumen de sus unidades en '+esc(C.config.nombre)+'.</p>';
+  var h='<div class="card"><h1>Hola, '+esc((P.nombre||"").split(" ")[0]||"propietario(a)")+'</h1><p class="muted">Este es el resumen de sus unidades en '+esc(String(C.config.nombre||"").replace(/\.+$/,""))+'.</p>';
   P.unidades.forEach(function(u,i){
-    var link=payLink(u,u.saldo);
     h+='<div class="unit"><div class="muted">'+esc(u.label)+(u.coef?" · coeficiente "+esc(u.coef)+"%":"")+'</div><div class="s">'+cop(u.saldo)+'</div>'+
       (u.saldo>0?(u.vencido>0?'<div class="box bad">En mora: '+cop(u.vencido)+' vencido ('+u.diasMora+' días)</div>':'<div class="box warn">Saldo pendiente, aún no vencido</div>'):'<div class="box ok">✓ Está al día</div>')+
-      '<div class="row">'+(link&&u.saldo>0?'<button class="btn pay" data-pay="'+i+'">💳 '+esc(C.pago.texto||"Pagar en línea")+'</button>':"")+
+      '<div class="row">'+payBtn(i,u)+
       '<button class="btn sec" data-ec="'+i+'">Estado de cuenta</button>'+(u.saldo<=0?'<button class="btn sec" data-pz="'+i+'">✅ Paz y salvo</button>':"")+'</div></div>';
   });
   if(!(C.pago&&C.pago.url)&&(C.pago.banco||C.pago.cuenta)) h+='<p class="muted">Pagos: '+esc([C.pago.banco,C.pago.cuenta&&("cuenta "+C.pago.cuenta),C.pago.convenio&&("convenio "+C.pago.convenio)].filter(Boolean).join(" · "))+'. Indique su unidad como referencia.</p>';
   h+='</div>';
   if(C.anuncios.length){ var a=C.anuncios[0]; h+='<div class="card"><h2>📢 Último anuncio</h2><b>'+esc(a.titulo)+'</b> <span class="muted">· '+fch(a.fecha)+'</span><p style="white-space:pre-wrap;margin:6px 0 0">'+esc(a.texto)+'</p></div>'; }
   v.innerHTML=h;
-  Array.prototype.forEach.call(v.querySelectorAll("[data-pay]"),function(b){b.onclick=function(){var u=P.unidades[+b.getAttribute("data-pay")];var l=payLink(u,u.saldo);if(confirm("Se abrirá la pasarela de pago.\n\nValor: "+cop(u.saldo)+"\nReferencia: "+u.label+(C.pago.nota?"\n\n"+C.pago.nota:"")+"\n\nGuarde el comprobante; la administración aplicará el pago a su estado de cuenta."))window.open(l,"_blank","noopener");};});
+  bindPay(v,P);
   Array.prototype.forEach.call(v.querySelectorAll("[data-ec]"),function(b){b.onclick=function(){TAB="cuenta";render();};});
   Array.prototype.forEach.call(v.querySelectorAll("[data-pz]"),function(b){b.onclick=function(){paz(P.unidades[+b.getAttribute("data-pz")]);};});
 }
@@ -133,10 +149,10 @@ function vCuenta(v,P){
   var h="";
   P.unidades.forEach(function(u,i){
     var rc=u.movs.filter(function(m){return m.abono>0;}).slice(-12).reverse();
-    h+='<div class="card"><h2>'+esc(u.label)+' · saldo '+cop(u.saldo)+'</h2><div class="tw">'+movsTable(u)+'</div><div class="row"><button class="btn sec" data-pr="'+i+'">🖨 Imprimir / PDF</button>'+(u.saldo<=0?'<button class="btn sec" data-pz="'+i+'">✅ Paz y salvo</button>':"")+'</div>'+
+    h+='<div class="card"><h2>'+esc(u.label)+' · saldo '+cop(u.saldo)+'</h2><div class="tw">'+movsTable(u)+'</div><div class="row">'+payBtn(i,u)+'<button class="btn sec" data-pr="'+i+'">🖨 Imprimir / PDF</button>'+(u.saldo<=0?'<button class="btn sec" data-pz="'+i+'">✅ Paz y salvo</button>':"")+'</div>'+
       (rc.length?'<h2 style="margin-top:14px">Recibos de caja</h2>'+rc.map(function(m,k){return '<div class="item">'+esc(m.rc||"Pago")+' · '+fch(m.f)+' · <b>'+cop(m.abono)+'</b> <button class="btn sec" style="padding:5px 10px;font-size:13px" data-rc="'+i+':'+k+'">Ver recibo</button></div>';}).join(""):"")+'</div>';
   });
-  v.innerHTML=h;
+  v.innerHTML=h; bindPay(v,P);
   Array.prototype.forEach.call(v.querySelectorAll("[data-pr]"),function(b){b.onclick=function(){var u=P.unidades[+b.getAttribute("data-pr")];printDoc("Estado de cuenta",'<p><b>Unidad:</b> '+esc(u.label)+' · <b>Propietario:</b> '+esc(P.nombre)+' · C.C. '+esc(CED)+'</p>'+movsTable(u)+'<h2>Saldo: '+cop(u.saldo)+'</h2>');};});
   Array.prototype.forEach.call(v.querySelectorAll("[data-pz]"),function(b){b.onclick=function(){paz(P.unidades[+b.getAttribute("data-pz")]);};});
   Array.prototype.forEach.call(v.querySelectorAll("[data-rc]"),function(b){b.onclick=function(){var a=b.getAttribute("data-rc").split(":"),u=P.unidades[+a[0]],m=u.movs.filter(function(x){return x.abono>0;}).slice(-12).reverse()[+a[1]];
