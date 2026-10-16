@@ -129,30 +129,52 @@ function vInicio(v,P,C){
   P.unidades.forEach(function(u,i){
     h+='<div class="unit"><div class="muted">'+esc(u.label)+(u.coef?" · coeficiente "+esc(u.coef)+"%":"")+'</div><div class="s">'+cop(u.saldo)+'</div>'+
       (u.saldo>0?(u.vencido>0?'<div class="box bad">En mora: '+cop(u.vencido)+' vencido ('+u.diasMora+' días)</div>':'<div class="box warn">Saldo pendiente, aún no vencido</div>'):'<div class="box ok">✓ Está al día</div>')+
-      '<div class="row">'+payBtn(i,u)+
+      '<div class="row">'+payBtn(i,u)+repBtn(i)+
       '<button class="btn sec" data-ec="'+i+'">Estado de cuenta</button>'+(u.saldo<=0?'<button class="btn sec" data-pz="'+i+'">✅ Paz y salvo</button>':"")+'</div></div>';
   });
   if(!(C.pago&&C.pago.url)&&(C.pago.banco||C.pago.cuenta)) h+='<p class="muted">Pagos: '+esc([C.pago.banco,C.pago.cuenta&&("cuenta "+C.pago.cuenta),C.pago.convenio&&("convenio "+C.pago.convenio)].filter(Boolean).join(" · "))+'. Indique su unidad como referencia.</p>';
   h+='</div>';
   if(C.anuncios.length){ var a=C.anuncios[0]; h+='<div class="card"><h2>📢 Último anuncio</h2><b>'+esc(a.titulo)+'</b> <span class="muted">· '+fch(a.fecha)+'</span><p style="white-space:pre-wrap;margin:6px 0 0">'+esc(a.texto)+'</p></div>'; }
   v.innerHTML=h;
-  bindPay(v,P);
+  bindPay(v,P); bindRep(v,P);
   Array.prototype.forEach.call(v.querySelectorAll("[data-ec]"),function(b){b.onclick=function(){TAB="cuenta";render();};});
   Array.prototype.forEach.call(v.querySelectorAll("[data-pz]"),function(b){b.onclick=function(){paz(P.unidades[+b.getAttribute("data-pz")]);};});
 }
+var VERIF="https://elitnyasesoriayformacion-debug.github.io/ph/portal/?v=";
+function qrData(text,cb){ var go=function(){ try{ var box=document.createElement("div"); new window.QRCode(box,{text:text,width:150,height:150,correctLevel:window.QRCode.CorrectLevel.M}); setTimeout(function(){ var cv=box.querySelector("canvas"), im=box.querySelector("img"); cb(cv?cv.toDataURL():(im&&im.src)||""); },60); }catch(e){ cb(""); } };
+  if(window.QRCode) return go(); var s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"; s.onload=go; s.onerror=function(){cb("");}; document.head.appendChild(s); }
 function paz(u){
   if(u.saldo>0){alert("No es posible generar el paz y salvo: la unidad tiene un saldo de "+cop(u.saldo)+".");return;}
   var c=D.comun.config||{};
-  printDoc("Paz y salvo",'<p style="font-size:12pt;line-height:1.8;text-align:justify">La Administración de <b>'+esc(c.nombre)+'</b>'+(c.nit?", identificada con NIT "+esc(c.nit):"")+', <b>CERTIFICA</b> que la unidad privada <b>'+esc(u.label)+'</b>, de propiedad de <b>'+esc(D.prop.nombre)+'</b>, identificado(a) con documento '+esc(CED)+', se encuentra a <b>PAZ Y SALVO</b> por concepto de cuotas de administración, intereses y demás expensas comunes causadas hasta el '+fch(D.comun.corte)+', según la información registrada por la administración.</p><p>Generado desde el portal de propietarios el '+new Date().toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"})+'.</p>'+firma());
+  var cuerpo='<p style="font-size:12pt;line-height:1.8;text-align:justify">La Administración de <b>'+esc(c.nombre)+'</b>'+(c.nit?", identificada con NIT "+esc(c.nit):"")+', <b>CERTIFICA</b> que la unidad privada <b>'+esc(u.label)+'</b>, de propiedad de <b>'+esc(D.prop.nombre)+'</b>, identificado(a) con documento '+esc(CED)+', se encuentra a <b>PAZ Y SALVO</b> por concepto de cuotas de administración, intereses y demás expensas comunes causadas hasta el '+fch(D.comun.corte)+', según la información registrada por la administración.</p><p>Generado desde el portal de propietarios el '+new Date().toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"})+'.</p>'+firma();
+  /* se registra en la nube con un código de verificación (si no hay conexión, se imprime igual que antes) */
+  api("certificar",{code:CODE,ced:CED,unidad:u.label}).then(function(j){
+    var url=VERIF+j.cert;
+    qrData(url,function(src){ printDoc("Paz y salvo",cuerpo+'<div style="margin-top:16px;border:1px solid #999;padding:8px 10px;font-size:9.5pt;display:flex;gap:12px;align-items:center">'+(src?'<img src="'+src+'" style="width:2.6cm;height:2.6cm">':"")+'<div><b>Código de verificación: '+esc(j.cert)+'</b><br>Verifique la autenticidad de este paz y salvo escaneando el código o en:<br>'+esc(url)+'</div></div>'); });
+  },function(e){ if(/saldo pendiente/.test(e.message)){ alert(e.message); return; } printDoc("Paz y salvo",cuerpo); });
 }
+function reportar(u){
+  var v=document.getElementById("v");
+  v.innerHTML='<div class="card"><h2>🧾 Reportar un pago · '+esc(u.label)+'</h2><p class="muted">Si ya pagó (en la pasarela, por consignación o transferencia), repórtelo aquí. La administración lo verifica con el banco y lo aplica a su estado de cuenta con su recibo de caja.</p>'+
+    '<label>Valor pagado</label><input id="xv" inputmode="numeric" value="'+(u.saldo>0?Math.round(u.saldo):"")+'"><label>Fecha del pago</label><input id="xf" type="date" max="'+hoy()+'" value="'+hoy()+'">'+
+    '<label>Medio</label><select id="xm"><option>Pasarela en línea / PSE</option><option>Transferencia</option><option>Consignación</option><option>Otro</option></select>'+
+    '<label>Número de comprobante o referencia</label><input id="xr" maxlength="80"><label>Observación (opcional)</label><input id="xn" maxlength="300">'+
+    '<div class="row"><button class="btn full" id="xs">Enviar reporte</button><button class="btn sec full" id="xc">Cancelar</button></div></div>';
+  document.getElementById("xc").onclick=function(){render();};
+  document.getElementById("xs").onclick=function(){ var val=Number(document.getElementById("xv").value.replace(/[^\d]/g,""))||0, ref=document.getElementById("xr").value.trim();
+    if(val<=0){alert("Escriba el valor pagado.");return;} if(!ref){alert("Escriba el número de comprobante o la referencia del pago.");return;}
+    send("pago",{unidad:u.label,valor:val,fecha:document.getElementById("xf").value,medio:document.getElementById("xm").value,referencia:ref,nota:document.getElementById("xn").value.trim()},this,"✓ Pago reportado. La administración lo verificará y lo aplicará a su estado de cuenta.").then(function(){render();}); };
+}
+function bindRep(v,P){Array.prototype.forEach.call(v.querySelectorAll("[data-rep]"),function(b){b.onclick=function(){reportar(P.unidades[+b.getAttribute("data-rep")]);};});}
+function repBtn(i){return '<button class="btn sec" data-rep="'+i+'">🧾 Reportar mi pago</button>';}
 function vCuenta(v,P){
   var h="";
   P.unidades.forEach(function(u,i){
     var rc=u.movs.filter(function(m){return m.abono>0;}).slice(-12).reverse();
-    h+='<div class="card"><h2>'+esc(u.label)+' · saldo '+cop(u.saldo)+'</h2><div class="tw">'+movsTable(u)+'</div><div class="row">'+payBtn(i,u)+'<button class="btn sec" data-pr="'+i+'">🖨 Imprimir / PDF</button>'+(u.saldo<=0?'<button class="btn sec" data-pz="'+i+'">✅ Paz y salvo</button>':"")+'</div>'+
+    h+='<div class="card"><h2>'+esc(u.label)+' · saldo '+cop(u.saldo)+'</h2><div class="tw">'+movsTable(u)+'</div><div class="row">'+payBtn(i,u)+repBtn(i)+'<button class="btn sec" data-pr="'+i+'">🖨 Imprimir / PDF</button>'+(u.saldo<=0?'<button class="btn sec" data-pz="'+i+'">✅ Paz y salvo</button>':"")+'</div>'+
       (rc.length?'<h2 style="margin-top:14px">Recibos de caja</h2>'+rc.map(function(m,k){return '<div class="item">'+esc(m.rc||"Pago")+' · '+fch(m.f)+' · <b>'+cop(m.abono)+'</b> <button class="btn sec" style="padding:5px 10px;font-size:13px" data-rc="'+i+':'+k+'">Ver recibo</button></div>';}).join(""):"")+'</div>';
   });
-  v.innerHTML=h; bindPay(v,P);
+  v.innerHTML=h; bindPay(v,P); bindRep(v,P);
   Array.prototype.forEach.call(v.querySelectorAll("[data-pr]"),function(b){b.onclick=function(){var u=P.unidades[+b.getAttribute("data-pr")];printDoc("Estado de cuenta",'<p><b>Unidad:</b> '+esc(u.label)+' · <b>Propietario:</b> '+esc(P.nombre)+' · C.C. '+esc(CED)+'</p>'+movsTable(u)+'<h2>Saldo: '+cop(u.saldo)+'</h2>');};});
   Array.prototype.forEach.call(v.querySelectorAll("[data-pz]"),function(b){b.onclick=function(){paz(P.unidades[+b.getAttribute("data-pz")]);};});
   Array.prototype.forEach.call(v.querySelectorAll("[data-rc]"),function(b){b.onclick=function(){var a=b.getAttribute("data-rc").split(":"),u=P.unidades[+a[0]],m=u.movs.filter(function(x){return x.abono>0;}).slice(-12).reverse()[+a[1]];
@@ -205,8 +227,18 @@ function vDatos(v,P,C){
   var ha=document.getElementById("ha"); if(ha) ha.onclick=function(){if(!document.getElementById("hc").checked){alert("Marque la casilla para autorizar.");return;} send("habeas",{estado:"ACEPTADA",version:C.habeas&&C.habeas.version},this,"✓ Autorización enviada.").then(function(){P.habeas={estado:"ACEPTADA",fecha:hoy()};render();});};
   var hr=document.getElementById("hr"); if(hr) hr.onclick=function(){if(!confirm("¿Revocar su autorización de tratamiento de datos?"))return; send("habeas",{estado:"REVOCADA"},this,"Revocación enviada a la administración.").then(function(){P.habeas={estado:"REVOCADA",fecha:hoy()};render();});};
 }
+/* Verificación pública de un paz y salvo: ?v=CODIGO */
+var VCODE=(new URLSearchParams(location.search).get("v")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+function verificar(){
+  app.innerHTML='<div class="login"><div class="card"><div style="font-size:44px">🔎</div><div style="color:var(--nar);font-weight:800;letter-spacing:.08em;font-size:12px;text-transform:uppercase">Verificación de paz y salvo</div><h1>Código '+esc(VCODE)+'</h1><div id="vr" class="muted">Consultando…</div><div class="row"><a class="btn sec full" href="./">Ir al portal de propietarios</a></div></div></div>';
+  api("verificar",{cert:VCODE}).then(function(j){ var r=document.getElementById("vr");
+    r.innerHTML=j&&j.valido?'<div class="box ok" style="text-align:left">✓ <b>Documento auténtico.</b><br>Paz y salvo expedido para la unidad <b>'+esc(j.unidad)+'</b> de <b>'+esc(j.conjunto)+'</b>, a nombre de <b>'+esc(j.propietario)+'</b>, el '+esc(new Date(j.emitido).toLocaleString("es-CO",{day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"}))+' ('+esc(j.origen)+').<br><span style="font-weight:500">El paz y salvo certifica el estado de la cuenta en esa fecha.</span></div>'
+      :'<div class="box bad">✕ <b>Código no encontrado.</b> Este documento no fue expedido por el portal o el código está mal escrito. Consulte con la administración del conjunto.</div>'; },
+    function(e){ document.getElementById("vr").innerHTML='<div class="box warn">'+esc(e.message)+'</div>'; });
+}
 var saved=String(ss("php-s")||"").split(":");
-if(saved.length===2&&saved[1]&&(!LINK_CODE||LINK_CODE===saved[0])){ app.innerHTML='<div class="login"><div class="card"><p>Cargando…</p></div></div>'; api("login",{code:saved[0],ced:saved[1]}).then(function(j){CED=saved[1];D=j;CODE=j.code||saved[0];render();},function(e){login(e.message);}); }
+if(VCODE) verificar();
+else if(saved.length===2&&saved[1]&&(!LINK_CODE||LINK_CODE===saved[0])){ app.innerHTML='<div class="login"><div class="card"><p>Cargando…</p></div></div>'; api("login",{code:saved[0],ced:saved[1]}).then(function(j){CED=saved[1];D=j;CODE=j.code||saved[0];render();},function(e){login(e.message);}); }
 else login();
 })();
 </script>
