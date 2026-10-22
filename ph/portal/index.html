@@ -41,6 +41,9 @@ td.n{text-align:right;white-space:nowrap}.tw{overflow-x:auto}
 .err{color:var(--bad);font-weight:600;min-height:20px;margin:10px 0;font-size:14px}
 .foot{text-align:center;color:var(--gris);font-size:12px;padding:10px 0 24px}
 #doc{display:none}
+.vbtn{display:block;width:100%;border:0;border-radius:14px;padding:16px;margin:8px 0;font-size:18px;font-weight:800;color:#fff;cursor:pointer}.vbtn:disabled{opacity:.5}
+.bar{height:14px;background:#e8eef8;border-radius:99px;overflow:hidden;margin:3px 0 8px}.bar>i{display:block;height:100%}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ok);font-weight:700}.live:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok);animation:bl 1.2s infinite}@keyframes bl{50%{opacity:.25}}
 @media print{body{background:#fff}body>*:not(#doc){display:none!important}#doc{display:block!important;color:#111;font:11pt Arial,sans-serif;padding:0 8px}#doc h1{text-align:center;color:#1e3a8a;font-size:15pt}#doc table{font-size:10pt}#doc th,#doc td{border:1px solid #999}}
 </style>
 </head>
@@ -71,11 +74,11 @@ function entrar(code,c,b,err){
       document.getElementById("pick").innerHTML='<p class="muted" style="margin:12px 0 6px">Su cédula está registrada en varios conjuntos. Elija uno:</p>'+j.elegir.map(function(x){return '<button class="btn sec full" style="margin:4px 0" data-code="'+esc(x.code)+'">🏢 '+esc(x.nombre)+'</button>';}).join("");
       Array.prototype.forEach.call(document.querySelectorAll("[data-code]"),function(x){x.onclick=function(){entrar(x.getAttribute("data-code"),c,null,err);};});
       return; }
-    CED=c; D=j; CODE=j.code||code; ss("php-s",CODE+":"+c); TAB="inicio"; render();
+    CED=c; D=j; CODE=j.code||code; ss("php-s",CODE+":"+c); TAB="inicio"; render(); asmStart();
   },function(e){ if(b){b.disabled=false;b.textContent="Ingresar";} err.textContent=e.message; var i=document.getElementById("ced"); if(i) i.select(); });
 }
 function login(msg){
-  D=null; CED=""; CODE=LINK_CODE; ss("php-s",null);
+  D=null; CED=""; CODE=LINK_CODE; ss("php-s",null); ASM=null; clearTimeout(ASM_T);
   document.title="Portal de propietarios";
   app.innerHTML='<div class="login"><div class="card"><div style="font-size:44px">🏠</div><div style="color:var(--nar);font-weight:800;letter-spacing:.08em;font-size:12px;text-transform:uppercase">Portal de propietarios</div>'+
     '<h1>Bienvenido(a)</h1><p class="muted">Ingrese con su <b>número de cédula</b>, el registrado por la administración de su conjunto.</p><input id="ced" inputmode="numeric" autocomplete="off" placeholder="Número de cédula"><div class="err" id="err">'+esc(msg||"")+'</div><button class="btn full" id="go">Ingresar</button><div id="pick"></div>'+
@@ -116,13 +119,13 @@ function send(tipo,data,btn,ok){
 function render(){
   var P=D.prop, C=D.comun, cfg=C.config||{};
   document.title=(cfg.nombre||"Portal")+" · Portal de propietarios";
-  var tabs=[["inicio","Inicio"],["cuenta","Estado de cuenta"],["pqrs","PQRS"],["reservas","Reservas"],["anuncios","Anuncios"],["datos","Mis datos"]];
+  var tabs=(ASM?[["asamblea","🗳 Asamblea"]]:[]).concat([["inicio","Inicio"]]).concat([["cuenta","Estado de cuenta"],["pqrs","PQRS"],["reservas","Reservas"],["anuncios","Anuncios"],["datos","Mis datos"]]);
   app.innerHTML='<div class="top"><div class="k">K</div><div class="t"><b>'+esc(cfg.nombre||"Copropiedad")+'</b><span>'+esc(P.nombre)+' · C.C. '+esc(CED)+'</span></div><button id="out">Salir</button></div>'+
     '<div class="wrap"><div class="tabs">'+tabs.map(function(t){return '<button data-t="'+t[0]+'" class="'+(t[0]===TAB?"on":"")+'">'+t[1]+'</button>';}).join("")+'</div><div id="v"></div>'+
     '<div class="foot">Información actualizada por la administración el '+fch(C.corte)+'.<br>Gestión Integral PH · Academia KREA</div></div>';
   document.getElementById("out").onclick=function(){login();};
   Array.prototype.forEach.call(app.querySelectorAll(".tabs button"),function(b){b.onclick=function(){TAB=b.getAttribute("data-t");render();window.scrollTo(0,0);};});
-  var v=document.getElementById("v"); ({inicio:vInicio,cuenta:vCuenta,pqrs:vPqrs,reservas:vReservas,anuncios:vAnuncios,datos:vDatos}[TAB]||vInicio)(v,P,C);
+  var v=document.getElementById("v"); ({asamblea:vAsamblea,inicio:vInicio,cuenta:vCuenta,pqrs:vPqrs,reservas:vReservas,anuncios:vAnuncios,datos:vDatos}[TAB]||vInicio)(v,P,C);
 }
 function vInicio(v,P,C){
   var h='<div class="card"><h1>Hola, '+esc((P.nombre||"").split(" ")[0]||"propietario(a)")+'</h1><p class="muted">Este es el resumen de sus unidades en '+esc(String(C.config.nombre||"").replace(/\.+$/,""))+'.</p>';
@@ -134,9 +137,11 @@ function vInicio(v,P,C){
   });
   if(!(C.pago&&C.pago.url)&&(C.pago.banco||C.pago.cuenta)) h+='<p class="muted">Pagos: '+esc([C.pago.banco,C.pago.cuenta&&("cuenta "+C.pago.cuenta),C.pago.convenio&&("convenio "+C.pago.convenio)].filter(Boolean).join(" · "))+'. Indique su unidad como referencia.</p>';
   h+='</div>';
+  h+=asmBanner();
   if(C.anuncios.length){ var a=C.anuncios[0]; h+='<div class="card"><h2>📢 Último anuncio</h2><b>'+esc(a.titulo)+'</b> <span class="muted">· '+fch(a.fecha)+'</span><p style="white-space:pre-wrap;margin:6px 0 0">'+esc(a.texto)+'</p></div>'; }
   v.innerHTML=h;
   bindPay(v,P); bindRep(v,P);
+  var ga=v.querySelector("[data-goasm]"); if(ga) ga.onclick=function(){TAB="asamblea";render();window.scrollTo(0,0);};
   Array.prototype.forEach.call(v.querySelectorAll("[data-ec]"),function(b){b.onclick=function(){TAB="cuenta";render();};});
   Array.prototype.forEach.call(v.querySelectorAll("[data-pz]"),function(b){b.onclick=function(){paz(P.unidades[+b.getAttribute("data-pz")]);};});
 }
@@ -227,6 +232,128 @@ function vDatos(v,P,C){
   var ha=document.getElementById("ha"); if(ha) ha.onclick=function(){if(!document.getElementById("hc").checked){alert("Marque la casilla para autorizar.");return;} send("habeas",{estado:"ACEPTADA",version:C.habeas&&C.habeas.version},this,"✓ Autorización enviada.").then(function(){P.habeas={estado:"ACEPTADA",fecha:hoy()};render();});};
   var hr=document.getElementById("hr"); if(hr) hr.onclick=function(){if(!confirm("¿Revocar su autorización de tratamiento de datos?"))return; send("habeas",{estado:"REVOCADA"},this,"Revocación enviada a la administración.").then(function(){P.habeas={estado:"REVOCADA",fecha:hoy()};render();});};
 }
+/* ================= Asamblea en línea: asistencia virtual y votación en tiempo real ================= */
+var ASM=null, ASM_T=null, ASMONLY=new URLSearchParams(location.search).get("asm")==="1", PIN=ss("php-pin")||"", ASM_BUSY=false;
+var VCOL=["#16a34a","#dc2626","#64748b","#2563eb","#d97706","#7c3aed"];
+function asmFetch(){
+  return api("asm_estado",{code:CODE,ced:CED}).then(function(j){ ASM=(j&&!j.sinAsamblea)?j:null; if(ASM&&ASM.code) CODE=ASM.code; return ASM; },
+    function(e){ if(ASMONLY) throw e; return ASM; });
+}
+function asmStart(){ asmFetch().then(function(){ if(ASM&&D) render(); asmLoop(); }); }
+function asmLoop(){
+  clearTimeout(ASM_T); if(!CED) return;
+  var fast=(TAB==="asamblea"||ASMONLY)&&!document.hidden;
+  ASM_T=setTimeout(function(){
+    if(ASM_BUSY){ asmLoop(); return; }
+    var had=!!ASM, before=JSON.stringify(ASM);
+    asmFetch().then(function(){
+      if(JSON.stringify(ASM)!==before){
+        if(ASMONLY) asmOnlyRender();
+        else if(D&&(had!==!!ASM||TAB==="asamblea")){ if(TAB==="asamblea"&&!ASM) TAB="inicio"; render(); }
+        else if(D&&TAB==="inicio") render();
+      }
+      asmLoop();
+    },function(){ asmLoop(); });
+  }, fast?3000:20000);
+}
+document.addEventListener("visibilitychange",function(){ if(!document.hidden&&CED) asmLoop(); });
+function asmAbiertas(){ return ASM?ASM.preguntas.filter(function(p){return p.estado==="abierta";}):[]; }
+function asmPresentes(){ return ASM?ASM.unidades.filter(function(u){return u.presente;}):[]; }
+function asmPendiente(p){ var pr=asmPresentes(); return pr.length&&pr.some(function(u){return !(p.mis&&p.mis[u.uk]);}); }
+function asmBanner(){
+  if(!ASM) return "";
+  var ab=asmAbiertas(), falta=ab.filter(asmPendiente).length;
+  return '<div class="card" style="border:2px solid var(--nar)"><h2>🗳 '+esc(ASM.nombre||"Asamblea")+'</h2><p class="muted" style="margin:0 0 10px">'+
+    (falta?('<b style="color:var(--bad)">Hay '+falta+' votación(es) abierta(s) esperando su voto.</b>'):(ab.length?"Ya registró su voto en las votaciones abiertas.":"La asamblea está en curso. Registre su asistencia y espere a que la administración abra cada votación."))+
+    '</p><button class="btn full" data-goasm="1">Ir a la asamblea</button></div>';
+}
+function askPin(msg){
+  if(!ASM||!ASM.pin) return "";
+  if(PIN&&!msg) return PIN;
+  var p=prompt((msg?msg+"\n\n":"")+"Escriba el PIN de la asamblea (lo da la administración al inicio de la reunión):",""); if(p===null) return null;
+  return String(p).replace(/\D/g,"");
+}
+function asmCall(route,extra,btn){
+  var pin=askPin(); if(pin===null) return Promise.resolve(null);
+  if(btn){btn.disabled=true;}
+  ASM_BUSY=true;
+  var body={code:CODE,ced:CED,pin:pin}; for(var k in extra) body[k]=extra[k];
+  return api(route,body).then(function(j){ if(pin){PIN=pin;ss("php-pin",pin);} return j; },function(e){
+    if(/PIN/.test(e.message)){ PIN=""; ss("php-pin",null); }
+    alert(e.message); return null;
+  }).then(function(j){ ASM_BUSY=false; if(btn) btn.disabled=false; return asmFetch().then(function(){ paintAsm(); return j; }); });
+}
+function vAsamblea(v){ v.innerHTML='<div id="asmv"></div>'; paintAsm(); asmLoop(); }
+function paintAsm(){
+  var box=document.getElementById("asmv"); if(!box) return;
+  if(!ASM){ box.innerHTML='<div class="card"><h2>🗳 Asamblea</h2><p class="muted">No hay una asamblea en curso con votación en línea.</p></div>'; return; }
+  var own=ASM.unidades.filter(function(u){return u.como==="propietario";}), ausentes=own.filter(function(u){return !u.presente;}), pres=asmPresentes();
+  var h='<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><h1 style="margin:0">'+esc(ASM.nombre||"Asamblea")+'</h1><span class="live">En vivo</span></div>'+
+    '<p class="muted" style="margin:4px 0 10px">'+esc(ASM.conjunto||"")+(ASM.fecha?" · "+fch(ASM.fecha):"")+'</p>'+
+    ASM.unidades.map(function(u){return '<div class="item"><b>'+esc(u.label)+'</b>'+(u.coef?' <span class="muted">· coef. '+esc(u.coef)+'%</span>':"")+(u.como==="apoderado"?' <span class="pill warn">Por poder</span>':"")+' '+(u.presente?'<span class="pill ok">✓ Asistencia registrada</span>':'<span class="pill bad">Sin registrar</span>')+'</div>';}).join("");
+  if(ausentes.length){
+    h+=ASM.regVirtual?'<div class="box warn">Para votar, primero registre su asistencia a la asamblea.</div><button class="btn full" id="asmReg">✋ Registrar mi asistencia virtual</button>'
+      :'<div class="box info">La asistencia la registra la mesa de registro de la asamblea. Acérquese o comuníquese con la administración.</div>';
+  }
+  h+='</div>';
+  var ab=asmAbiertas(), cer=ASM.preguntas.filter(function(p){return p.estado==="cerrada";});
+  if(!ab.length) h+='<div class="card" style="text-align:center"><div style="font-size:36px">⏳</div><h2>Esperando la próxima votación</h2><p class="muted">Esta pantalla se actualiza sola cuando la administración abra una votación.</p></div>';
+  ab.forEach(function(p){
+    var mine=pres.filter(function(u){return p.mis&&p.mis[u.uk];}), pend=pres.filter(function(u){return !(p.mis&&p.mis[u.uk]);}), r=p.res||{};
+    h+='<div class="card" style="border:2px solid var(--nar)"><div style="color:var(--nar);font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase">Votación abierta · '+(p.mayoria==="calificada"?"requiere el 70% del total de coeficientes":"mayoría de los presentes")+'</div><h2 style="font-size:20px;margin:6px 0 10px">'+esc(p.pregunta)+'</h2>';
+    if(!pres.length) h+='<div class="box info">Registre su asistencia para poder votar.</div>';
+    else if(pend.length) h+=(mine.length?'<div class="box ok">Ya votó por: '+esc(mine.map(function(u){return u.label+" ("+p.mis[u.uk]+")";}).join(", "))+'</div>':"")+
+      '<p class="muted">Su voto se registra para: <b>'+esc(pend.map(function(u){return u.label;}).join(", "))+'</b>. Una vez emitido no se puede cambiar.</p>'+
+      p.opciones.map(function(o,i){return '<button class="vbtn" style="background:'+VCOL[i%VCOL.length]+'" data-q="'+esc(p.id)+'" data-o="'+esc(o)+'">'+esc(o)+'</button>';}).join("");
+    else h+='<div class="box ok">✓ Su voto quedó registrado: '+esc(mine.map(function(u){return u.label+" → "+p.mis[u.uk];}).join(" · "))+'</div>';
+    if(r.presentes) h+='<p class="muted" style="margin-top:8px">Han votado '+(r.votaron||0)+' de '+r.presentes+' unidades presentes. Los resultados se muestran al cerrar la votación.</p>';
+    h+='</div>';
+  });
+  if(cer.length) h+='<div class="card"><h2>Resultados</h2>'+cer.slice().reverse().map(function(p){ var r=p.res||{};
+    return '<div class="item"><b>'+esc(p.pregunta)+'</b> '+(r.fin?'<span class="pill '+(r.aprob?"ok":"bad")+'">'+(r.aprob?"APROBADA":"NO APROBADA")+'</span>':"")+
+      (r.ops?r.ops.map(function(x,i){return '<div style="display:flex;justify-content:space-between;font-size:13px;margin-top:6px"><span>'+esc(x.o)+' · '+x.n+' voto(s)</span><b>'+Number(x.pct).toFixed(2)+'%</b></div><div class="bar"><i style="width:'+Math.min(100,x.pct)+'%;background:'+VCOL[i%VCOL.length]+'"></i></div>';}).join(""):"")+
+      (p.mis&&Object.keys(p.mis).length?'<div class="muted">Su voto: '+esc(Object.keys(p.mis).map(function(k){return p.mis[k];}).join(", "))+'</div>':"")+
+      '<div class="muted">'+(p.mayoria==="calificada"?"Porcentajes sobre el total de coeficientes (mayoría calificada)":"Porcentajes sobre los coeficientes presentes")+'</div></div>';}).join("")+'</div>';
+  box.innerHTML=h;
+  var rg=document.getElementById("asmReg");
+  if(rg) rg.onclick=function(){ asmCall("asm_asistir",{},rg).then(function(j){ if(j&&j.ok) alert("✓ Asistencia registrada"+(j.registradas?" para "+j.registradas+" unidad(es)":"")+". Ya puede votar cuando la administración abra cada votación."); }); };
+  Array.prototype.forEach.call(box.querySelectorAll("[data-q]"),function(b){ b.onclick=function(){
+    var o=b.getAttribute("data-o"), q=b.getAttribute("data-q");
+    if(!confirm("¿Confirma su voto: «"+o+"»?\n\nUna vez emitido no se puede cambiar.")) return;
+    asmCall("asm_votar",{qid:q,opcion:o},b).then(function(j){ if(j&&j.ok) alert("✓ Voto registrado («"+o+"») para "+j.votos+" unidad(es)."); });
+  }; });
+}
+/* Enlace directo de la asamblea (?asm=1): propietarios y apoderados */
+function asmLogin(msg){
+  CED=""; CODE=LINK_CODE; ASM=null; clearTimeout(ASM_T); ss("php-a",null);
+  document.title="Asamblea · votación en línea";
+  app.innerHTML='<div class="login"><div class="card"><div style="font-size:44px">🗳</div><div style="color:var(--nar);font-weight:800;letter-spacing:.08em;font-size:12px;text-transform:uppercase">Asamblea · votación en línea</div>'+
+    '<h1>Ingrese para votar</h1><p class="muted">Escriba su <b>número de cédula</b>: la del propietario registrado o, si viene con poder, la suya como apoderado(a).</p><input id="ced" inputmode="numeric" autocomplete="off" placeholder="Número de cédula"><div class="err" id="err">'+esc(msg||"")+'</div><button class="btn full" id="go">Ingresar</button>'+
+    '<p class="muted" style="margin-top:16px;font-size:11.5px">Gestión Integral PH · Academia KREA · <a href="https://elitnyasesoriayformacion-debug.github.io/politica-de-privacidad/" target="_blank" rel="noopener">Política de privacidad</a></p></div></div>';
+  var inp=document.getElementById("ced"), b=document.getElementById("go"), err=document.getElementById("err");
+  var go=function(){ var c=inp.value.replace(/\D/g,""); if(c.length<4){err.textContent="Escriba su número de cédula completo.";inp.focus();return;}
+    b.disabled=true; b.textContent="Verificando…"; err.textContent=""; CED=c;
+    asmFetch().then(function(){ if(!ASM){ CED=""; b.disabled=false; b.textContent="Ingresar"; err.textContent="No hay una asamblea en curso con votación en línea para esta cédula."; return; }
+      ss("php-a",CODE+":"+c); asmOnlyRender(); asmLoop(); },
+      function(e){ CED=""; b.disabled=false; b.textContent="Ingresar"; err.textContent=e.message; inp.select(); });
+  };
+  b.onclick=go; inp.onkeydown=function(e){if(e.key==="Enter")go();}; setTimeout(function(){inp.focus();},60);
+}
+function asmOnlyRender(){
+  if(!ASM){ asmLogin("La asamblea en línea terminó o no está disponible."); return; }
+  document.title=(ASM.nombre||"Asamblea")+" · votación";
+  if(!document.getElementById("asmv")){
+    app.innerHTML='<div class="top"><div class="k">K</div><div class="t"><b>'+esc(ASM.conjunto||"Asamblea")+'</b><span>Votación en línea · C.C. '+esc(CED)+'</span></div><button id="out">Salir</button></div><div class="wrap"><div id="asmv"></div><div class="foot">Gestión Integral PH · Academia KREA</div></div>';
+    document.getElementById("out").onclick=function(){ asmLogin(); };
+  }
+  paintAsm();
+}
+function asmResume(){
+  var s=String(ss("php-a")||"").split(":");
+  if(s.length===2&&s[1]&&(!LINK_CODE||LINK_CODE===s[0])){ CODE=s[0]; CED=s[1]; app.innerHTML='<div class="login"><div class="card"><p>Cargando…</p></div></div>';
+    asmFetch().then(function(){ asmOnlyRender(); asmLoop(); },function(e){ asmLogin(e.message); }); }
+  else asmLogin();
+}
 /* Verificación pública de un paz y salvo: ?v=CODIGO */
 var VCODE=(new URLSearchParams(location.search).get("v")||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
 function verificar(){
@@ -238,7 +365,8 @@ function verificar(){
 }
 var saved=String(ss("php-s")||"").split(":");
 if(VCODE) verificar();
-else if(saved.length===2&&saved[1]&&(!LINK_CODE||LINK_CODE===saved[0])){ app.innerHTML='<div class="login"><div class="card"><p>Cargando…</p></div></div>'; api("login",{code:saved[0],ced:saved[1]}).then(function(j){CED=saved[1];D=j;CODE=j.code||saved[0];render();},function(e){login(e.message);}); }
+else if(ASMONLY) asmResume();
+else if(saved.length===2&&saved[1]&&(!LINK_CODE||LINK_CODE===saved[0])){ app.innerHTML='<div class="login"><div class="card"><p>Cargando…</p></div></div>'; api("login",{code:saved[0],ced:saved[1]}).then(function(j){CED=saved[1];D=j;CODE=j.code||saved[0];render();asmStart();},function(e){login(e.message);}); }
 else login();
 })();
 </script>
