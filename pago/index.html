@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Pago de plan · Academia KREA</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0}
+body{font:15px/1.5 "Segoe UI",Roboto,system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:18px;background:radial-gradient(circle at 30% 15%,#15479d,#071f50 60%,#020817);color:#0b1733}
+.card{background:#fff;border-radius:20px;padding:28px 24px;width:min(460px,100%);text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.k{color:#ff6a00;font-weight:800;letter-spacing:.08em;font-size:12px;text-transform:uppercase}
+h1{font-size:22px;margin:8px 0;color:#071f50}.ic{font-size:52px;line-height:1}
+.mu{color:#64748b;font-size:13px}.box{border-radius:12px;padding:12px 14px;margin:14px 0;font-weight:600;text-align:left}
+.ok{background:#dcfce7;color:#166534}.bad{background:#fee2e2;color:#991b1b}.w{background:#fef3c7;color:#92400e}
+button{border:0;border-radius:12px;padding:11px 16px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,#ff6a00,#ff8a00);color:#fff;font:inherit;font-weight:700}
+</style>
+</head>
+<body>
+<div class="card" id="c"><div class="ic">⏳</div><div class="k">Academia KREA · pago de plan</div><h1>Verificando su pago…</h1><p class="mu">Estamos confirmando la transacción directamente con ePayco.</p></div>
+<script>
+(function(){
+"use strict";
+var SB="https://kdklenfuqafnmdrmpvuo.supabase.co", KEY="sb_publishable_6PO6U3rXvK7q-JUP6dUBCg_gnMcyLyq";
+var q=new URLSearchParams(location.search), ref=(q.get("ref_payco")||q.get("x_ref_payco")||"").replace(/[^A-Za-z0-9_-]/g,"").slice(0,40), c=document.getElementById("c"), n=0;
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(x){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x];});}
+function fch(d){if(!d)return "";var x=new Date(d);return isNaN(x)?"":x.toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"});}
+function show(ic,t,html){c.innerHTML='<div class="ic">'+ic+'</div><div class="k">Academia KREA · pago de plan</div><h1>'+t+'</h1>'+html+(ref?'<p class="mu">Referencia ePayco: <b>'+esc(ref)+'</b></p>':"");}
+function check(){
+  fetch(SB+"/rest/v1/rpc/krea_api",{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY,Authorization:"Bearer "+KEY},
+    body:JSON.stringify({p_app:"pay",p_token:"",p_route:"confirmar",p_method:"POST",p_query:{},p_body:{ref_payco:ref},p_ua:""})})
+  .then(function(r){return r.json();}).then(function(j){
+    if(j&&j.error){ show("⚠️","No pudimos confirmar el pago",'<div class="box w">'+esc(j.error)+'</div><p class="mu">Si el cobro aparece en su banco, escríbanos a elitnyasesoriayformacion@gmail.com con la referencia.</p><button id="r">Intentar de nuevo</button>'); document.getElementById("r").onclick=check; return; }
+    if(j.estado==="aprobado") show("✅","¡Pago aprobado!",'<div class="box ok">Su <b>'+esc(j.plan||"plan")+'</b> de <b>'+esc(j.app)+'</b> quedó activo'+(j.max?' (hasta '+j.max+' empresas)':"")+(j.vence?' hasta el <b>'+esc(fch(j.vence))+'</b>':"")+'.</div><p class="mu">Vuelva al aplicativo: el plan ya está disponible (si estaba abierto, se actualiza en unos segundos).</p>');
+    else if(j.estado==="pendiente"){ show("⏳","Pago pendiente",'<div class="box w">ePayco reporta el pago como <b>pendiente</b> (PSE o efectivo). Su plan se activará automáticamente cuando el pago sea aprobado.</div>'); if(++n<20) setTimeout(check,30000); }
+    else if(j.estado==="revisar") show("🔎","Pago en revisión",'<div class="box w">Recibimos su pago y quedó en revisión por Academia KREA'+(j.nota?' ('+esc(j.nota)+')':"")+'. Le confirmaremos la activación.</div>');
+    else show("❌","Pago no aprobado",'<div class="box bad">La transacción no fue aprobada'+(j.nota?' ('+esc(j.nota)+')':"")+'. Puede intentarlo de nuevo desde el aplicativo, en «💳 Planes».</div>');
+  },function(){ show("⚠️","Sin conexión",'<div class="box w">No hay conexión para verificar el pago.</div><button id="r">Intentar de nuevo</button>'); document.getElementById("r").onclick=check; });
+}
+if(!ref) show("ℹ️","Pago de planes KREA",'<p class="mu">Esta página confirma los pagos de planes de Gestión Integral PH y PESV Studio. Para comprar un plan, abra el aplicativo y pulse «💳 Planes».</p>');
+else check();
+})();
+</script>
+</body>
+</html>
