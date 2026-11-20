@@ -1,24 +1,36 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Q·26 Studio · Conectando con Google</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(1200px 600px at 20% 10%,#12324a 0,#070b14 60%);color:#e8eefb;font:16px/1.55 system-ui,Segoe UI,Roboto,sans-serif;padding:16px}
-.c{max-width:480px;width:100%;background:rgba(14,22,36,.92);border:1px solid #233651;border-radius:20px;padding:28px;box-shadow:0 30px 80px rgba(0,0,0,.55);text-align:center}
-.lg{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#14b8a6,#6366f1);font-weight:800;font-size:20px;margin-bottom:10px}
-h1{font-size:21px;margin:6px 0}p{color:#a9b6d3;font-size:14px}.code{font:700 13px ui-monospace,Consolas,monospace;word-break:break-all;background:#0a111d;border:1px dashed #3b5378;border-radius:12px;padding:12px;margin:12px 0;user-select:all;text-align:left;max-height:120px;overflow:auto}
-button{border:0;border-radius:12px;padding:12px 16px;font-weight:700;font-size:15px;cursor:pointer;width:100%;background:linear-gradient(90deg,#14b8a6,#6366f1);color:#fff}.ok{color:#5eead4}.bad{color:#ff8f8f}</style></head>
-<body><div class="c"><div class="lg">Q</div><h1 id="t">Conectando con Google…</h1><p id="p"></p><div id="x"></div></div>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Conectando con Google</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(1200px 600px at 20% 10%,#2a1a55 0,#0b0718 60%);color:#efeaff;font:16px/1.55 system-ui,Segoe UI,Roboto,sans-serif;padding:16px}
+.c{max-width:460px;width:100%;background:rgba(26,18,54,.92);border:1px solid #3a2b6e;border-radius:20px;padding:28px;box-shadow:0 30px 80px rgba(0,0,0,.55);text-align:center}
+.lg{display:inline-grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#fff;margin-bottom:10px}
+h1{font-size:21px;margin:6px 0}p{color:#b9b0dc;font-size:14px}.ok{color:#5eead4}.bad{color:#ff8f8f}
+.code{font:700 12px ui-monospace,Consolas,monospace;word-break:break-all;background:#0f0a22;border:1px dashed #4b3b88;border-radius:12px;padding:10px;margin:10px 0;user-select:all;text-align:left;max-height:110px;overflow:auto}
+a.lk{color:#a99fd0;font-size:12.5px;cursor:pointer}button{border:0;border-radius:12px;padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer;width:100%;background:#2a1f55;color:#fff;margin-top:6px}
+.sp{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:s 1s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes s{to{transform:rotate(360deg)}}</style></head>
+<body><div class="c"><div class="lg"><svg width="26" height="26" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg></div>
+<h1 id="t"><span class="sp"></span>Conectando con Google…</h1><p id="p"></p><div id="x"></div></div>
 <script>
 (function(){
+  var RELAY='https://kdklenfuqafnmdrmpvuo.supabase.co/rest/v1/rpc/kn_oauth_put';
+  var ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtka2xlbmZ1cWFmbm1kcm1wdnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwMjc4NzQsImV4cCI6MjEwNzYwMzg3NH0.8o6QG3TVFYAm4VOrJum5F7RG2k8RIASwUDkk_vi7QE0';
   var q=new URLSearchParams(location.search), code=q.get('code'), state=q.get('state')||'', err=q.get('error');
   history.replaceState(null,'',location.pathname);
   var t=document.getElementById('t'), p=document.getElementById('p'), x=document.getElementById('x');
-  if(err||!code){ t.textContent='No se completó la autorización'; t.className='bad'; p.textContent=err==='access_denied'?'Se canceló el permiso en Google. Vuelva a Q·26 e inténtelo de nuevo.':'Vuelva a Q·26 e inténtelo de nuevo.'; return; }
+  if(err||!code){ t.textContent='No se completó la autorización'; t.className='bad'; p.textContent=err==='access_denied'?'Se canceló el permiso en Google. Vuelva a la aplicación e inténtelo de nuevo.':'Vuelva a la aplicación e inténtelo de nuevo.'; return; }
   var payload='Q26G:'+state+':'+code, sent=false;
   try{ if(window.opener){ window.opener.postMessage({type:'q26g-oauth',state:state,code:code},'*'); sent=true; } }catch(e){}
-  if(sent){ t.textContent='✓ Cuenta conectada'; t.className='ok'; p.textContent='Ya puede cerrar esta pestaña y volver a Q·26 Studio.'; setTimeout(function(){ try{ window.close(); }catch(e){} },1500); }
-  else { t.textContent='Último paso'; p.innerHTML='Copie este código y péguelo en Q·26 Studio, en el recuadro <b>«Pegue aquí el código»</b>.'; }
-  x.innerHTML='<div class="code" id="c"></div><button id="b">Copiar código</button>';
-  document.getElementById('c').textContent=payload;
-  document.getElementById('b').onclick=function(){ try{ navigator.clipboard.writeText(payload); this.textContent='✓ Copiado. Vuelva a Q·26 y péguelo'; }catch(e){ this.textContent='Seleccione el texto y cópielo'; } };
-  if(sent){ x.firstChild.style.display='none'; document.getElementById('b').textContent='¿No se conectó? Copiar código'; }
+  function copia(visible){
+    x.innerHTML=(visible?'':'<a class="lk" id="ver">¿La aplicación no entró sola? Mostrar código</a>')+'<div id="cx" style="'+(visible?'':'display:none')+'"><div class="code" id="c"></div><button id="b">Copiar código</button></div>';
+    document.getElementById('c').textContent=payload;
+    document.getElementById('b').onclick=function(){ try{ navigator.clipboard.writeText(payload); this.textContent='✓ Copiado. Péguelo en la aplicación'; }catch(e){ this.textContent='Seleccione el texto y cópielo'; } };
+    var v=document.getElementById('ver'); if(v) v.onclick=function(){ document.getElementById('cx').style.display=''; v.remove(); };
+  }
+  function listo(){ t.textContent='✓ Cuenta conectada'; t.className='ok'; p.textContent='Vuelva a la aplicación: entrará automáticamente. Ya puede cerrar esta pestaña.'; copia(false); setTimeout(function(){ try{ window.close(); }catch(e){} },2000); }
+  fetch(RELAY,{method:'POST',headers:{'Content-Type':'application/json','apikey':ANON,'Authorization':'Bearer '+ANON},body:JSON.stringify({p_state:state,p_code:code})})
+    .then(function(r){return r.ok?r.json():false;},function(){return false;})
+    .then(function(ok){
+      if(ok===true||sent){ listo(); return; }
+      t.textContent='Último paso'; t.className=''; p.textContent='Copie este código y péguelo en la aplicación.'; copia(true);
+    });
 })();
 </script></body></html>
