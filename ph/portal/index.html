@@ -119,13 +119,30 @@ function send(tipo,data,btn,ok){
 function render(){
   var P=D.prop, C=D.comun, cfg=C.config||{};
   document.title=(cfg.nombre||"Portal")+" · Portal de propietarios";
-  var tabs=(ASM?[["asamblea","🗳 Asamblea"]]:[]).concat([["inicio","Inicio"]]).concat([["cuenta","Estado de cuenta"],["pqrs","PQRS"],["reservas","Reservas"],["anuncios","Anuncios"],["datos","Mis datos"]]);
+  var tabs=(ASM?[["asamblea","🗳 Asamblea"]]:[]).concat([["inicio","Inicio"]]).concat([["cuenta","Estado de cuenta"],["unidad","Mi unidad"],["pqrs","PQRS"],["reservas","Reservas"],["anuncios","Anuncios"],["datos","Mis datos"]]);
   app.innerHTML='<div class="top"><div class="k">K</div><div class="t"><b>'+esc(cfg.nombre||"Copropiedad")+'</b><span>'+esc(P.nombre)+' · C.C. '+esc(CED)+'</span></div><button id="out">Salir</button></div>'+
     '<div class="wrap"><div class="tabs">'+tabs.map(function(t){return '<button data-t="'+t[0]+'" class="'+(t[0]===TAB?"on":"")+'">'+t[1]+'</button>';}).join("")+'</div><div id="v"></div>'+
     '<div class="foot">Información actualizada por la administración el '+fch(C.corte)+'.<br>Gestión Integral PH · Academia KREA</div></div>';
   document.getElementById("out").onclick=function(){login();};
   Array.prototype.forEach.call(app.querySelectorAll(".tabs button"),function(b){b.onclick=function(){TAB=b.getAttribute("data-t");render();window.scrollTo(0,0);};});
-  var v=document.getElementById("v"); ({asamblea:vAsamblea,inicio:vInicio,cuenta:vCuenta,pqrs:vPqrs,reservas:vReservas,anuncios:vAnuncios,datos:vDatos}[TAB]||vInicio)(v,P,C);
+  var v=document.getElementById("v"); ({asamblea:vAsamblea,inicio:vInicio,cuenta:vCuenta,unidad:vUnidad,pqrs:vPqrs,reservas:vReservas,anuncios:vAnuncios,datos:vDatos}[TAB]||vInicio)(v,P,C);
+}
+function vUnidad(v,P){
+  function tabla(cols,rows,vacio){ if(!rows||!rows.length) return '<p class="muted">'+vacio+'</p>'; return '<table><tr>'+cols.map(function(c){return '<th>'+c[1]+'</th>';}).join("")+'</tr>'+rows.map(function(r){return '<tr>'+cols.map(function(c){var x=r[c[0]]; return '<td>'+(c[2]==="f"?fch(x):esc(x==null?"":x))+'</td>';}).join("")+'</tr>';}).join("")+'</table>'; }
+  var h='';
+  P.unidades.forEach(function(u){
+    var w=u.viv||{}, pend=(w.correspondencia||[]).filter(function(c){return c.estado!=="Entregado";});
+    h+='<div class="card"><h1 style="font-size:19px">'+esc(u.label)+'</h1><p class="muted">'+[u.coef&&("Coeficiente "+u.coef+"%"),u.parqueadero&&("Parqueadero "+u.parqueadero),u.deposito&&("Depósito "+u.deposito),u.ocupacion&&("Ocupación: "+u.ocupacion)].filter(Boolean).map(esc).join(" · ")+'</p>'+
+      '<h2 style="margin-top:12px">📦 Correspondencia en portería</h2>'+(pend.length?'<div class="box warn">'+pend.length+' pendiente'+(pend.length>1?'s':'')+' por reclamar</div>':'')+
+      tabla([["fecha","Recibido","f"],["tipo","Tipo"],["remitente","Remitente"],["estado","Estado"],["fechaEntrega","Entregado","f"]],w.correspondencia,"No hay correspondencia registrada.")+
+      '<h2 style="margin-top:14px">👪 Residentes registrados</h2>'+tabla([["nombre","Nombre"],["personas","Personas"],["menores","Menores"]],w.residentes,"No hay residentes registrados.")+
+      '<h2 style="margin-top:14px">🚗 Vehículos</h2>'+tabla([["tipo","Tipo"],["placa","Placa"],["marca","Marca"],["color","Color"],["parqueadero","Parqueadero"]],w.vehiculos,"No hay vehículos registrados.")+
+      '<h2 style="margin-top:14px">🐾 Mascotas</h2>'+tabla([["tipo","Tipo"],["nombre","Nombre"],["raza","Raza"],["carne","Vacunas / carné"]],w.mascotas,"No hay mascotas registradas.")+
+      '<h2 style="margin-top:14px">✅ Personas autorizadas para ingresar</h2>'+tabla([["nombre","Nombre"],["tipo","Tipo"],["hasta","Vigente hasta","f"]],w.autorizados,"No hay personas preautorizadas.")+
+      '<h2 style="margin-top:14px">🚚 Trasteos</h2>'+tabla([["fecha","Fecha","f"],["tipo","Tipo"],["horario","Horario"],["aprobado","Aprobado"]],w.trasteos,"No hay trasteos registrados.")+
+      '<p class="muted" style="margin-top:12px">¿Algún dato no está actualizado? Infórmelo en «Mis datos» o radique una PQRS.</p></div>';
+  });
+  v.innerHTML=h||'<div class="card"><p class="muted">No hay unidades registradas.</p></div>';
 }
 function vInicio(v,P,C){
   var h='<div class="card"><h1>Hola, '+esc((P.nombre||"").split(" ")[0]||"propietario(a)")+'</h1><p class="muted">Este es el resumen de sus unidades en '+esc(String(C.config.nombre||"").replace(/\.+$/,""))+'.</p>';
@@ -137,10 +154,13 @@ function vInicio(v,P,C){
   });
   if(!(C.pago&&C.pago.url)&&(C.pago.banco||C.pago.cuenta)) h+='<p class="muted">Pagos: '+esc([C.pago.banco,C.pago.cuenta&&("cuenta "+C.pago.cuenta),C.pago.convenio&&("convenio "+C.pago.convenio)].filter(Boolean).join(" · "))+'. Indique su unidad como referencia.</p>';
   h+='</div>';
+  var pend=0; P.unidades.forEach(function(u){ pend+=((u.viv&&u.viv.correspondencia)||[]).filter(function(c){return c.estado!=="Entregado";}).length; });
+  if(pend) h+='<div class="card"><h2>📦 Tiene '+pend+' envío'+(pend>1?'s':'')+' en portería</h2><p class="muted">Puede reclamarlo'+(pend>1?'s':'')+' en la portería del conjunto.</p><button class="btn sec" data-gou="1">Ver detalle</button></div>';
   h+=asmBanner();
   if(C.anuncios.length){ var a=C.anuncios[0]; h+='<div class="card"><h2>📢 Último anuncio</h2><b>'+esc(a.titulo)+'</b> <span class="muted">· '+fch(a.fecha)+'</span><p style="white-space:pre-wrap;margin:6px 0 0">'+esc(a.texto)+'</p></div>'; }
   v.innerHTML=h;
   bindPay(v,P); bindRep(v,P);
+  var gu=v.querySelector("[data-gou]"); if(gu) gu.onclick=function(){TAB="unidad";render();window.scrollTo(0,0);};
   var ga=v.querySelector("[data-goasm]"); if(ga) ga.onclick=function(){TAB="asamblea";render();window.scrollTo(0,0);};
   Array.prototype.forEach.call(v.querySelectorAll("[data-ec]"),function(b){b.onclick=function(){TAB="cuenta";render();};});
   Array.prototype.forEach.call(v.querySelectorAll("[data-pz]"),function(b){b.onclick=function(){paz(P.unidades[+b.getAttribute("data-pz")]);};});
